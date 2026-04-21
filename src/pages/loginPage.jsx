@@ -1,7 +1,15 @@
 import { useForm } from "react-hook-form";
 import { useLogin } from "../features/auth/useLogin";
+import { Navigate } from "react-router-dom";
 
 export default function LoginPage() {
+  const token = localStorage.getItem("token");
+
+  // 🔐 si ya está logueado → fuera de aquí
+  if (token) {
+    return <Navigate to="/" replace />;
+  }
+
   const { register, handleSubmit } = useForm();
   const { mutate, isLoading, isError } = useLogin();
 

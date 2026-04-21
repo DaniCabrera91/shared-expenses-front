@@ -1,13 +1,24 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import LoginPage from "../pages/loginPage";
-import DashboardPage from "../pages/dashboardPage";
+import LoginPage from "../pages/LoginPage";
+import DashboardPage from "../pages/DashboardPage";
+import ProtectedRoute from "../components/protectedRoute";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* pública */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<DashboardPage />} />
+
+        {/* protegida */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
