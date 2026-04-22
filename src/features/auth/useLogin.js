@@ -8,7 +8,8 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: loginRequest,
     onSuccess: (data) => {
-      localStorage.setItem("token", data.accessToken);
+      // El backend devuelve "token", no "accessToken"
+      localStorage.setItem("token", data.token);
       navigate("/");
     },
   });

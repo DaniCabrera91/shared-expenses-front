@@ -29,7 +29,8 @@ api.interceptors.response.use(
       try {
         const { data } = await api.post("/auth/refresh");
 
-        localStorage.setItem("token", data.accessToken);
+        // El backend devuelve "token", no "accessToken"
+        localStorage.setItem("token", data.token);
 
         return api(originalRequest);
       } catch (err) {
