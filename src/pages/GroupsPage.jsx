@@ -5,7 +5,8 @@ import { useCreateGroup } from "../features/groups/useCreateGroup";
 export default function GroupsPage() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [emoji, setEmoji] = useState("");
+  const [currency, setCurrency] = useState("EUR");
 
   const { data: groups, isLoading, error } = useGroups();
   const { mutate, isPending } = useCreateGroup();
@@ -13,12 +14,13 @@ export default function GroupsPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     mutate(
-      { name, description },
+      { name, emoji: emoji || "💰", currency },
       {
         onSuccess: () => {
           setShowForm(false);
           setName("");
-          setDescription("");
+          setEmoji("");
+          setCurrency("EUR");
         },
       },
     );
@@ -80,13 +82,29 @@ export default function GroupsPage() {
             </div>
             <div style={{ marginBottom: "1rem" }}>
               <label style={{ display: "block", marginBottom: "0.5rem" }}>
-                Descripción
+                Emoji
               </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                style={{ width: "100%", padding: "0.5rem", minHeight: "80px" }}
+              <input
+                type="text"
+                inputMode="emoji"
+                value={emoji}
+                onChange={(e) => setEmoji(e.target.value)}
+                style={{ width: "100%", padding: "0.5rem" }}
               />
+            </div>
+            <div style={{ marginBottom: "1rem" }}>
+              <label style={{ display: "block", marginBottom: "0.5rem" }}>
+                Moneda
+              </label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                style={{ width: "100%", padding: "0.5rem" }}
+              >
+                <option value="EUR">EUR - Euro</option>
+                <option value="USD">USD - Dólar</option>
+                <option value="GBP">GBP - Libra</option>
+              </select>
             </div>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button type="submit" disabled={isPending}>
@@ -118,8 +136,9 @@ export default function GroupsPage() {
                 borderRadius: "8px",
               }}
             >
-              <h3>{group.name}</h3>
-              <p>{group.description || "Sin descripción"}</p>
+              <h3>
+                {group.emoji || "💰"} {group.name}
+              </h3>
             </li>
           ))}
         </ul>
