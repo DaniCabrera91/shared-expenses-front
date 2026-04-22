@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
-import ProtectedRoute from "../components/protectedRoute";
+import GroupsPage from "../pages/GroupsPage";
+import ProtectedRoute from "../components/ProtectedRoute";
+import Layout from "../components/Layout";
 
 export default function AppRouter() {
   return (
@@ -10,15 +12,17 @@ export default function AppRouter() {
         {/* pública */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* protegida */}
+        {/* protegida con layout */}
         <Route
-          path="/"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <Layout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/groups" element={<GroupsPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
