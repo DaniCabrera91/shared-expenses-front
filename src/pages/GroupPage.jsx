@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useGroup } from "../features/groups/useGroup";
 import { useGroupMembers } from "../features/groups/useGroupMembers";
 import { useGroupExpenses } from "../features/expenses/useGroupExpenses";
+import { useGroupBalances } from "../features/expenses/useGroupBalances";
 
 export default function GroupPage() {
   const { groupId } = useParams();
@@ -20,12 +21,17 @@ export default function GroupPage() {
     isLoading: loadingExpenses,
     error: expensesError,
   } = useGroupExpenses(groupId);
+  const {
+    data: balances,
+    isLoading: loadingBalances,
+    error: balancesError,
+  } = useGroupBalances(groupId);
 
-  if (loadingGroup || loadingMembers || loadingExpenses) {
+  if (loadingGroup || loadingMembers || loadingExpenses || loadingBalances) {
     return <div>Cargando grupo...</div>;
   }
 
-  if (groupError || membersError || expensesError) {
+  if (groupError || membersError || expensesError || balancesError) {
     return <div>No se pudo cargar el grupo.</div>;
   }
 
@@ -39,6 +45,11 @@ export default function GroupPage() {
       currency: group.currency || "EUR",
     }).format(amount);
   };
+
+  const memberNamesById = members?.reduce((acc, member) => {
+    acc[member.id] = `${member.first_name} ${member.last_name}`;
+    return acc;
+  }, {});
 
   return (
     <div>
@@ -86,6 +97,45 @@ export default function GroupPage() {
         )}
       </section>
 
+      <section style={{ marginBottom: "2rem" }}>
+        <h2>Balances</h2>
+        {balances?.length === 0 ? (
+          <p>No hay balances disponibles.</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {balances.map((balance) => {
+              const name = memberNamesById?.[balance.id] || balance.id;
+              const value = Number(balance.balance);
+
+              return (
+                <li
+                  key={balance.id}
+                  style={{
+                    padding: "0.75rem",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    marginBottom: "0.5rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span>{name}</span>
+                  <span
+                    style={{
+                      color: value >= 0 ? "#1b5e20" : "#b71c1c",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {formatCurrency(value)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       <section>
         <h2>Gastos</h2>
         {expenses?.length === 0 ? (
@@ -109,7 +159,8 @@ export default function GroupPage() {
                   <strong>{formatCurrency(expense.total_amount)}</strong>
                 </div>
                 <div style={{ color: "#666", marginTop: "0.25rem" }}>
-                  Pagado por: {expense.paid_by}
+                  Pagado por:{" "}
+                  {memberNamesById?.[expense.paid_by] || expense.paid_by}
                 </div>
               </li>
             ))}
