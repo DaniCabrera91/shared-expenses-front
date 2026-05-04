@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import EmojiPicker from "emoji-picker-react";
 import { useGroups } from "../features/groups/useGroups";
 import { useCreateGroup } from "../features/groups/useCreateGroup";
 
@@ -7,6 +9,7 @@ export default function GroupsPage() {
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("");
   const [currency, setCurrency] = useState("EUR");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const { data: groups, isLoading, error } = useGroups();
   const { mutate, isPending } = useCreateGroup();
@@ -80,17 +83,39 @@ export default function GroupsPage() {
                 style={{ width: "100%", padding: "0.5rem" }}
               />
             </div>
-            <div style={{ marginBottom: "1rem" }}>
+            <div style={{ marginBottom: "1rem", position: "relative" }}>
               <label style={{ display: "block", marginBottom: "0.5rem" }}>
                 Emoji
               </label>
-              <input
-                type="text"
-                inputMode="emoji"
-                value={emoji}
-                onChange={(e) => setEmoji(e.target.value)}
-                style={{ width: "100%", padding: "0.5rem" }}
-              />
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker((prev) => !prev)}
+                style={{
+                  width: "100%",
+                  padding: "0.5rem",
+                  textAlign: "left",
+                }}
+              >
+                {emoji || "Seleccionar emoji"}
+              </button>
+              {showEmojiPicker && (
+                <div
+                  style={{
+                    position: "absolute",
+                    zIndex: 20,
+                    top: "3.5rem",
+                    left: 0,
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+                  }}
+                >
+                  <EmojiPicker
+                    onEmojiClick={(emojiData) => {
+                      setEmoji(emojiData.emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <div style={{ marginBottom: "1rem" }}>
               <label style={{ display: "block", marginBottom: "0.5rem" }}>
@@ -137,7 +162,12 @@ export default function GroupsPage() {
               }}
             >
               <h3>
-                {group.emoji || "💰"} {group.name}
+                <Link
+                  to={`/groups/${group.id}`}
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
+                  {group.emoji || "💰"} {group.name}
+                </Link>
               </h3>
             </li>
           ))}
