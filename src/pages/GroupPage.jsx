@@ -8,6 +8,7 @@ import { useGroupExpenses } from "../features/expenses/useGroupExpenses";
 import { useGroupBalances } from "../features/expenses/useGroupBalances";
 import { useCreateExpense } from "../features/expenses/useCreateExpense";
 import { useDeleteExpense } from "../features/expenses/useDeleteExpense";
+import { useUpdateExpense } from "../features/expenses/useUpdateExpense";
 import { useCreateInvitation } from "../features/invitations/useInvitations";
 
 export default function GroupPage() {
@@ -19,7 +20,12 @@ export default function GroupPage() {
   const [showInvitationModal, setShowInvitationModal] = useState(false);
   const [generatedToken, setGeneratedToken] = useState("");
   const [invitationError, setInvitationError] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // { expenseId, description }
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editTotalAmount, setEditTotalAmount] = useState("");
+  const [editPaidBy, setEditPaidBy] = useState("");
+  const [editError, setEditError] = useState("");
 
   // Obtener usuario actual para verificar si es admin
   const { data: currentUserData, isLoading: loadingUser } = useQuery({
@@ -55,6 +61,8 @@ export default function GroupPage() {
     useCreateInvitation(groupId);
   const { mutate: deleteExpense, isLoading: deletingExpense } =
     useDeleteExpense(groupId);
+  const { mutate: updateExpense, isLoading: updatingExpense } =
+    useUpdateExpense(groupId);
 
   // Debug: log de currentUserData y members
   if (currentUserData && members) {
@@ -122,6 +130,70 @@ export default function GroupPage() {
         console.error("Error al eliminar:", error);
       },
     });
+  };
+
+  const startEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setEditDescription(expense.description || "");
+    setEditTotalAmount(String(expense.total_amount || ""));
+    setEditPaidBy(expense.paid_by || members?.[0]?.id || "");
+    setEditError("");
+  };
+
+  const handleUpdateExpense = (event) => {
+    event.preventDefault();
+    setEditError("");
+
+    const amount = Number(editTotalAmount);
+    if (!editDescription.trim()) {
+      setEditError("La descripción es obligatoria.");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      setEditError("Introduce un importe válido.");
+      return;
+    }
+    if (!editPaidBy) {
+      setEditError("Selecciona quién pagó el gasto.");
+      return;
+    }
+
+    const baseShare = Math.floor((amount / members.length) * 100) / 100;
+    const shares = members.map((member, index) => ({
+      user_id: member.id,
+      amount_owed:
+        index === members.length - 1
+          ? Number((amount - baseShare * (members.length - 1)).toFixed(2))
+          : baseShare,
+    }));
+
+    updateExpense(
+      {
+        expenseId: editingExpense.id,
+        data: {
+          description: editDescription.trim(),
+          total_amount: amount,
+          currency: group.currency,
+          paid_by: editPaidBy,
+          shares,
+        },
+      },
+      {
+        onSuccess: () => {
+          setEditingExpense(null);
+          setEditDescription("");
+          setEditTotalAmount("");
+          setEditPaidBy("");
+        },
+        onError: (error) => {
+          setEditError(
+            error.response?.data?.message ||
+              error.message ||
+              "No se pudo actualizar el gasto.",
+          );
+        },
+      },
+    );
   };
 
   const handleSubmit = (event) => {
@@ -471,31 +543,164 @@ export default function GroupPage() {
                     {memberNamesById?.[expense.paid_by] || expense.paid_by}
                   </div>
                 </div>
-                <button
-                  onClick={() =>
-                    setDeleteConfirm({
-                      expenseId: expense.id,
-                      description: expense.description,
-                    })
-                  }
+                <div
                   style={{
                     marginLeft: "1rem",
-                    padding: "0.5rem",
-                    background: "#f44336",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "0.875rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.5rem",
                   }}
                 >
-                  Eliminar
-                </button>
+                  <button
+                    onClick={() => startEditExpense(expense)}
+                    style={{
+                      padding: "0.5rem",
+                      background: "#1976d2",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() =>
+                      setDeleteConfirm({
+                        expenseId: expense.id,
+                        description: expense.description,
+                      })
+                    }
+                    style={{
+                      padding: "0.5rem",
+                      background: "#f44336",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {/* Modal de edición de gasto */}
+      {editingExpense && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setEditingExpense(null)}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "2rem",
+              borderRadius: "8px",
+              width: "400px",
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2>Editar gasto</h2>
+            <form onSubmit={handleUpdateExpense}>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem" }}>
+                  Descripción
+                </label>
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(event) => setEditDescription(event.target.value)}
+                  required
+                  style={{ width: "100%", padding: "0.5rem" }}
+                />
+              </div>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem" }}>
+                  Importe
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editTotalAmount}
+                  onChange={(event) => setEditTotalAmount(event.target.value)}
+                  required
+                  style={{ width: "100%", padding: "0.5rem" }}
+                />
+              </div>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem" }}>
+                  Pagado por
+                </label>
+                <select
+                  value={editPaidBy}
+                  onChange={(event) => setEditPaidBy(event.target.value)}
+                  style={{ width: "100%", padding: "0.5rem" }}
+                >
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.first_name} {member.last_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {editError && (
+                <div style={{ color: "#b71c1c", marginBottom: "1rem" }}>
+                  {editError}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingExpense(null)}
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    background: "#ccc",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingExpense}
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    background: "#1976d2",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {updatingExpense ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmación de eliminación */}
       {deleteConfirm && (

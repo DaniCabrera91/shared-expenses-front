@@ -14,6 +14,9 @@ export const expensesApi = {
   // Eliminar gasto
   delete: (expenseId) => api.delete(`/expenses/${expenseId}`),
 
+  // Actualizar gasto
+  update: (expenseId, data) => api.put(`/expenses/${expenseId}`, data),
+
   // Balances de un grupo
   getBalances: (groupId) => api.get(`/expenses/groups/${groupId}/balances`),
 };
