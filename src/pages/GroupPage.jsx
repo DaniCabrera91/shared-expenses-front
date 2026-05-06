@@ -20,10 +20,11 @@ export default function GroupPage() {
   const [invitationError, setInvitationError] = useState("");
 
   // Obtener usuario actual para verificar si es admin
-  const { data: currentUser } = useQuery({
+  const { data: currentUserData, isLoading: loadingUser } = useQuery({
     queryKey: ["me"],
     queryFn: () => api.get("/users/me"),
-    select: (res) => res.data,
+    select: (res) => res.data.user,
+    retry: false,
   });
 
   const {
@@ -51,10 +52,16 @@ export default function GroupPage() {
   const { mutate: createInvitation, isLoading: creatingInvitation } =
     useCreateInvitation(groupId);
 
+  // Debug: log de currentUserData y members
+  if (currentUserData && members) {
+    console.log("currentUserData:", currentUserData);
+    console.log("members:", members);
+  }
+
   // Verificar si el usuario actual es admin
-  const isAdmin = members?.some(
-    (m) => m.id === currentUser?.id && m.role === "admin",
-  );
+  const isAdmin =
+    currentUserData &&
+    members?.some((m) => m.id === currentUserData.id && m.role === "admin");
 
   if (loadingGroup || loadingMembers || loadingExpenses || loadingBalances) {
     return <div>Cargando grupo...</div>;
@@ -84,20 +91,16 @@ export default function GroupPage() {
 
   const handleCreateInvitation = () => {
     setInvitationError("");
-    createInvitation(
-      { expiresIn: 7 },
-      {
-        onSuccess: (response) => {
-          setGeneratedToken(response.data.token);
-        },
-        onError: (error) => {
-          setInvitationError(
-            error.response?.data?.message ||
-              "No se pudo generar la invitación.",
-          );
-        },
+    createInvitation(7, {
+      onSuccess: (response) => {
+        setGeneratedToken(response.data.token);
       },
-    );
+      onError: (error) => {
+        setInvitationError(
+          error.response?.data?.message || "No se pudo generar la invitación.",
+        );
+      },
+    });
   };
 
   const copyToClipboard = () => {

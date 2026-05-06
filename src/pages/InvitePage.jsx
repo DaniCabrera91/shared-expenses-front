@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useValidateInvitation,
@@ -11,7 +10,7 @@ export default function InvitePage() {
   const { token } = useParams();
   const navigate = useNavigate();
 
-  // Validar si el usuario está autenticado
+  // Validar si el usuario está autenticado (sin retry para no esperar)
   const {
     data: user,
     isLoading: loadingUser,
@@ -19,6 +18,7 @@ export default function InvitePage() {
   } = useQuery({
     queryKey: ["me"],
     queryFn: () => api.get("/users/me"),
+    select: (res) => res.data.user,
     retry: false,
   });
 
@@ -43,35 +43,124 @@ export default function InvitePage() {
     });
   };
 
+  // Si no estás autenticado
   if (userError) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <h2>Necesitas estar autenticado</h2>
-        <p>Por favor, inicia sesión para unirte al grupo.</p>
-        <a href="/login">Ir a login</a>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          background: "#f5f5f5",
+        }}
+      >
+        <div
+          style={{
+            padding: "2rem",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            maxWidth: "400px",
+            textAlign: "center",
+            background: "white",
+          }}
+        >
+          <h1>
+            {invitation?.groupEmoji || "💰"} {invitation?.groupName}
+          </h1>
+          <p style={{ color: "#666", marginBottom: "1.5rem" }}>
+            Te han invitado a unirte a este grupo.
+          </p>
+
+          <div
+            style={{
+              background: "#fff3cd",
+              padding: "1rem",
+              borderRadius: "8px",
+              marginBottom: "1.5rem",
+              border: "1px solid #ffc107",
+            }}
+          >
+            <p style={{ margin: "0.5rem 0", color: "#856404" }}>
+              <strong>Necesitas una cuenta para unirte.</strong>
+            </p>
+          </div>
+
+          <a
+            href="/login"
+            style={{
+              display: "inline-block",
+              width: "100%",
+              padding: "0.75rem 1.5rem",
+              background: "#1976d2",
+              color: "white",
+              textDecoration: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              marginBottom: "0.75rem",
+              boxSizing: "border-box",
+            }}
+          >
+            Inicia sesión o regístrate
+          </a>
+
+          <p style={{ color: "#999", fontSize: "0.875rem" }}>
+            El link expira el{" "}
+            {new Date(invitation?.expiresAt).toLocaleDateString("es-ES")}
+          </p>
+        </div>
       </div>
     );
   }
 
   if (loadingUser || loadingInvitation) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>Cargando...</div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+        }}
+      >
+        Cargando...
+      </div>
     );
   }
 
   if (invitationError) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <h2>Invitación no válida</h2>
-        <p>
-          {invitationError.response?.status === 410
-            ? "Esta invitación ha expirado."
-            : "Esta invitación no existe."}
-        </p>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          background: "#f5f5f5",
+        }}
+      >
+        <div
+          style={{
+            padding: "2rem",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            maxWidth: "400px",
+            textAlign: "center",
+            background: "white",
+          }}
+        >
+          <h2>Invitación no válida</h2>
+          <p>
+            {invitationError.response?.status === 410
+              ? "Esta invitación ha expirado."
+              : "Esta invitación no existe."}
+          </p>
+        </div>
       </div>
     );
   }
 
+  // Si estás autenticado, mostrar opción para unirse
   return (
     <div
       style={{
@@ -79,6 +168,7 @@ export default function InvitePage() {
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
+        background: "#f5f5f5",
       }}
     >
       <div
@@ -88,12 +178,15 @@ export default function InvitePage() {
           borderRadius: "8px",
           maxWidth: "400px",
           textAlign: "center",
+          background: "white",
         }}
       >
         <h1>
           {invitation?.groupEmoji || "💰"} {invitation?.groupName}
         </h1>
-        <p style={{ color: "#666" }}>Te han invitado a unirte a este grupo.</p>
+        <p style={{ color: "#666", marginBottom: "1.5rem" }}>
+          Te han invitado a unirte a este grupo.
+        </p>
 
         <div
           style={{
@@ -103,12 +196,8 @@ export default function InvitePage() {
             marginBottom: "1.5rem",
           }}
         >
-          <p style={{ margin: "0.5rem 0" }}>
-            <strong>Tu usuario:</strong>{" "}
-            {user?.data?.alias || user?.data?.email}
-          </p>
-          <p style={{ margin: "0.5rem 0" }}>
-            <strong>Expira:</strong>{" "}
+          <p style={{ margin: "0.5rem 0", color: "#666" }}>
+            <strong>Válido hasta:</strong>{" "}
             {new Date(invitation?.expiresAt).toLocaleDateString("es-ES")}
           </p>
         </div>
@@ -117,13 +206,15 @@ export default function InvitePage() {
           onClick={handleJoin}
           disabled={joining}
           style={{
+            width: "100%",
             padding: "0.75rem 1.5rem",
-            background: "#1976d2",
+            background: "#4caf50",
             color: "white",
             border: "none",
             borderRadius: "4px",
             cursor: "pointer",
             fontSize: "1rem",
+            fontWeight: "bold",
           }}
         >
           {joining ? "Uniéndose..." : "Unirme al grupo"}
