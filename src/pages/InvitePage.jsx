@@ -86,25 +86,47 @@ export default function InvitePage() {
             </p>
           </div>
 
-          <a
-            href="/login"
-            style={{
-              display: "inline-block",
-              width: "100%",
-              padding: "0.75rem 1.5rem",
-              background: "#1976d2",
-              color: "white",
-              textDecoration: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              marginBottom: "0.75rem",
-              boxSizing: "border-box",
-            }}
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
           >
-            Inicia sesión o regístrate
-          </a>
+            <a
+              href="/login"
+              style={{
+                display: "inline-block",
+                width: "100%",
+                padding: "0.75rem 1.5rem",
+                background: "#1976d2",
+                color: "white",
+                textDecoration: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                boxSizing: "border-box",
+                textAlign: "center",
+              }}
+            >
+              Iniciar sesión
+            </a>
 
-          <p style={{ color: "#999", fontSize: "0.875rem" }}>
+            <a
+              href="/register"
+              style={{
+                display: "inline-block",
+                width: "100%",
+                padding: "0.75rem 1.5rem",
+                background: "#4caf50",
+                color: "white",
+                textDecoration: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                boxSizing: "border-box",
+                textAlign: "center",
+              }}
+            >
+              Crear cuenta
+            </a>
+          </div>
+
+          <p style={{ color: "#999", fontSize: "0.875rem", marginTop: "1rem" }}>
             El link expira el{" "}
             {new Date(invitation?.expiresAt).toLocaleDateString("es-ES")}
           </p>
