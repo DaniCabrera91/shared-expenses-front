@@ -551,39 +551,43 @@ export default function GroupPage() {
                     gap: "0.5rem",
                   }}
                 >
-                  <button
-                    onClick={() => startEditExpense(expense)}
-                    style={{
-                      padding: "0.5rem",
-                      background: "#1976d2",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() =>
-                      setDeleteConfirm({
-                        expenseId: expense.id,
-                        description: expense.description,
-                      })
-                    }
-                    style={{
-                      padding: "0.5rem",
-                      background: "#f44336",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    Eliminar
-                  </button>
+                  {(isAdmin || currentUserData?.id === expense.created_by) && (
+                    <>
+                      <button
+                        onClick={() => startEditExpense(expense)}
+                        style={{
+                          padding: "0.5rem",
+                          background: "#1976d2",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() =>
+                          setDeleteConfirm({
+                            expenseId: expense.id,
+                            description: expense.description,
+                          })
+                        }
+                        style={{
+                          padding: "0.5rem",
+                          background: "#f44336",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
                 </div>
               </li>
             ))}
