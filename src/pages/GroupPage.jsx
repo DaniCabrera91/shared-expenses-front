@@ -1,11 +1,31 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../api/client";
 import { useGroup } from "../features/groups/useGroup";
 import { useGroupMembers } from "../features/groups/useGroupMembers";
 import { useGroupExpenses } from "../features/expenses/useGroupExpenses";
 import { useGroupBalances } from "../features/expenses/useGroupBalances";
+import { useCreateExpense } from "../features/expenses/useCreateExpense";
+import { useCreateInvitation } from "../features/invitations/useInvitations";
 
 export default function GroupPage() {
   const { groupId } = useParams();
+  const [description, setDescription] = useState("");
+  const [totalAmount, setTotalAmount] = useState("");
+  const [paidBy, setPaidBy] = useState("");
+  const [formError, setFormError] = useState("");
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState("");
+  const [invitationError, setInvitationError] = useState("");
+
+  // Obtener usuario actual para verificar si es admin
+  const { data: currentUser } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => api.get("/users/me"),
+    select: (res) => res.data,
+  });
+
   const {
     data: group,
     isLoading: loadingGroup,
@@ -26,6 +46,15 @@ export default function GroupPage() {
     isLoading: loadingBalances,
     error: balancesError,
   } = useGroupBalances(groupId);
+
+  const { mutate, isLoading: creatingExpense } = useCreateExpense(groupId);
+  const { mutate: createInvitation, isLoading: creatingInvitation } =
+    useCreateInvitation(groupId);
+
+  // Verificar si el usuario actual es admin
+  const isAdmin = members?.some(
+    (m) => m.id === currentUser?.id && m.role === "admin",
+  );
 
   if (loadingGroup || loadingMembers || loadingExpenses || loadingBalances) {
     return <div>Cargando grupo...</div>;
@@ -51,6 +80,84 @@ export default function GroupPage() {
     return acc;
   }, {});
 
+  const selectedPaidBy = paidBy || members?.[0]?.id || "";
+
+  const handleCreateInvitation = () => {
+    setInvitationError("");
+    createInvitation(
+      { expiresIn: 7 },
+      {
+        onSuccess: (response) => {
+          setGeneratedToken(response.data.token);
+        },
+        onError: (error) => {
+          setInvitationError(
+            error.response?.data?.message ||
+              "No se pudo generar la invitación.",
+          );
+        },
+      },
+    );
+  };
+
+  const copyToClipboard = () => {
+    const invitationLink = `${window.location.origin}/invite/${generatedToken}`;
+    navigator.clipboard.writeText(invitationLink);
+    alert("Link copiado al portapapeles");
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setFormError("");
+
+    const amount = Number(totalAmount);
+    if (!description.trim()) {
+      setFormError("La descripción es obligatoria.");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      setFormError("Introduce un importe válido.");
+      return;
+    }
+    if (!selectedPaidBy) {
+      setFormError("Selecciona quién pagó el gasto.");
+      return;
+    }
+
+    const baseShare = Math.floor((amount / members.length) * 100) / 100;
+    const shares = members.map((member, index) => ({
+      user_id: member.id,
+      amount_owed:
+        index === members.length - 1
+          ? Number((amount - baseShare * (members.length - 1)).toFixed(2))
+          : baseShare,
+    }));
+
+    mutate(
+      {
+        description: description.trim(),
+        total_amount: amount,
+        currency: group.currency,
+        paid_by: selectedPaidBy,
+        shares,
+      },
+      {
+        onSuccess: () => {
+          setDescription("");
+          setTotalAmount("");
+          setPaidBy("");
+        },
+        onError: (error) => {
+          setFormError(
+            error.response?.data?.message ||
+              error.message ||
+              "No se pudo crear el gasto.",
+          );
+        },
+      },
+    );
+  };
+
   return (
     <div>
       <div
@@ -68,7 +175,130 @@ export default function GroupPage() {
           </h1>
           <p style={{ color: "#666" }}>Moneda: {group.currency}</p>
         </div>
+        {isAdmin && (
+          <button
+            onClick={() => setShowInvitationModal(true)}
+            style={{
+              padding: "0.5rem 1rem",
+              background: "#4caf50",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Generar invitación
+          </button>
+        )}
       </div>
+
+      {/* Modal de invitación */}
+      {showInvitationModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "2rem",
+              borderRadius: "8px",
+              width: "400px",
+            }}
+          >
+            <h2>Generar invitación</h2>
+
+            {!generatedToken ? (
+              <div>
+                <p style={{ color: "#666", marginBottom: "1rem" }}>
+                  Crea un link de invitación válido por 7 días.
+                </p>
+                {invitationError && (
+                  <div style={{ color: "#b71c1c", marginBottom: "1rem" }}>
+                    {invitationError}
+                  </div>
+                )}
+                <button
+                  onClick={handleCreateInvitation}
+                  disabled={creatingInvitation}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#1976d2",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {creatingInvitation ? "Generando..." : "Generar link"}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p style={{ color: "#1b5e20", marginBottom: "1rem" }}>
+                  ✓ Link generado correctamente
+                </p>
+                <div
+                  style={{
+                    background: "#f5f5f5",
+                    padding: "0.75rem",
+                    borderRadius: "4px",
+                    marginBottom: "1rem",
+                    wordBreak: "break-all",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  {`${window.location.origin}/invite/${generatedToken}`}
+                </div>
+                <button
+                  onClick={copyToClipboard}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#4caf50",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Copiar link
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setShowInvitationModal(false);
+                setGeneratedToken("");
+                setInvitationError("");
+              }}
+              style={{
+                width: "100%",
+                padding: "0.5rem",
+                background: "#ccc",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
 
       <section style={{ marginBottom: "2rem" }}>
         <h2>Miembros</h2>
@@ -95,6 +325,62 @@ export default function GroupPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section style={{ marginBottom: "2rem" }}>
+        <h2>Crear gasto</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", marginBottom: "0.5rem" }}>
+              Descripción
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              required
+              style={{ width: "100%", padding: "0.5rem" }}
+            />
+          </div>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", marginBottom: "0.5rem" }}>
+              Importe
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={totalAmount}
+              onChange={(event) => setTotalAmount(event.target.value)}
+              required
+              style={{ width: "100%", padding: "0.5rem" }}
+            />
+          </div>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", marginBottom: "0.5rem" }}>
+              Pagado por
+            </label>
+            <select
+              value={selectedPaidBy}
+              onChange={(event) => setPaidBy(event.target.value)}
+              style={{ width: "100%", padding: "0.5rem" }}
+            >
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.first_name} {member.last_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {formError && (
+            <div style={{ color: "#b71c1c", marginBottom: "1rem" }}>
+              {formError}
+            </div>
+          )}
+          <button type="submit" disabled={creatingExpense}>
+            {creatingExpense ? "Creando..." : "Crear gasto"}
+          </button>
+        </form>
       </section>
 
       <section style={{ marginBottom: "2rem" }}>
