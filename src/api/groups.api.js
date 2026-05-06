@@ -17,6 +17,9 @@ export const groupsApi = {
   addMember: (groupId, userId) =>
     api.post(`/groups/${groupId}/members`, { userId }),
 
+  updateMemberRole: (groupId, userId, role) =>
+    api.patch(`/groups/${groupId}/members/${userId}/role`, { role }),
+
   removeMember: (groupId, userId) =>
     api.delete(`/groups/${groupId}/members/${userId}`),
 

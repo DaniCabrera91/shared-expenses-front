@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { useGroup } from "../features/groups/useGroup";
 import { useGroupMembers } from "../features/groups/useGroupMembers";
+import { useUpdateMemberRole } from "../features/groups/useUpdateMemberRole";
 import { useGroupExpenses } from "../features/expenses/useGroupExpenses";
 import { useGroupBalances } from "../features/expenses/useGroupBalances";
 import { useCreateExpense } from "../features/expenses/useCreateExpense";
@@ -63,6 +64,11 @@ export default function GroupPage() {
     useDeleteExpense(groupId);
   const { mutate: updateExpense, isLoading: updatingExpense } =
     useUpdateExpense(groupId);
+  const { mutate: updateMemberRole, isLoading: updatingMemberRole } =
+    useUpdateMemberRole(groupId);
+
+  const [updatingMemberId, setUpdatingMemberId] = useState(null);
+  const [memberRoleError, setMemberRoleError] = useState("");
 
   // Debug: log de currentUserData y members
   if (currentUserData && members) {
@@ -74,6 +80,28 @@ export default function GroupPage() {
   const isAdmin =
     currentUserData &&
     members?.some((m) => m.id === currentUserData.id && m.role === "admin");
+
+  const handleChangeMemberRole = (userId, role) => {
+    setMemberRoleError("");
+    setUpdatingMemberId(userId);
+
+    updateMemberRole(
+      { userId, role },
+      {
+        onSuccess: () => {
+          setUpdatingMemberId(null);
+        },
+        onError: (error) => {
+          setUpdatingMemberId(null);
+          setMemberRoleError(
+            error.response?.data?.error ||
+              error.message ||
+              "No se pudo actualizar el rol.",
+          );
+        },
+      },
+    );
+  };
 
   if (loadingGroup || loadingMembers || loadingExpenses || loadingBalances) {
     return <div>Cargando grupo...</div>;
@@ -392,6 +420,11 @@ export default function GroupPage() {
 
       <section style={{ marginBottom: "2rem" }}>
         <h2>Miembros</h2>
+        {memberRoleError && (
+          <div style={{ color: "#b71c1c", marginBottom: "1rem" }}>
+            {memberRoleError}
+          </div>
+        )}
         {members?.length === 0 ? (
           <p>No hay miembros en este grupo.</p>
         ) : (
@@ -410,7 +443,31 @@ export default function GroupPage() {
                   {member.first_name} {member.last_name}
                 </strong>
                 <div style={{ color: "#666" }}>{member.email}</div>
-                <div style={{ marginTop: "0.25rem" }}>Rol: {member.role}</div>
+                <div
+                  style={{
+                    marginTop: "0.75rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <div>Rol:</div>
+                  {isAdmin ? (
+                    <select
+                      value={member.role}
+                      onChange={(event) =>
+                        handleChangeMemberRole(member.id, event.target.value)
+                      }
+                      disabled={updatingMemberId === member.id}
+                      style={{ padding: "0.4rem", borderRadius: "4px" }}
+                    >
+                      <option value="admin">admin</option>
+                      <option value="member">member</option>
+                    </select>
+                  ) : (
+                    <span>{member.role}</span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
