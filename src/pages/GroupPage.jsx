@@ -7,6 +7,7 @@ import { useGroupMembers } from "../features/groups/useGroupMembers";
 import { useGroupExpenses } from "../features/expenses/useGroupExpenses";
 import { useGroupBalances } from "../features/expenses/useGroupBalances";
 import { useCreateExpense } from "../features/expenses/useCreateExpense";
+import { useDeleteExpense } from "../features/expenses/useDeleteExpense";
 import { useCreateInvitation } from "../features/invitations/useInvitations";
 
 export default function GroupPage() {
@@ -18,6 +19,7 @@ export default function GroupPage() {
   const [showInvitationModal, setShowInvitationModal] = useState(false);
   const [generatedToken, setGeneratedToken] = useState("");
   const [invitationError, setInvitationError] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { expenseId, description }
 
   // Obtener usuario actual para verificar si es admin
   const { data: currentUserData, isLoading: loadingUser } = useQuery({
@@ -51,6 +53,8 @@ export default function GroupPage() {
   const { mutate, isLoading: creatingExpense } = useCreateExpense(groupId);
   const { mutate: createInvitation, isLoading: creatingInvitation } =
     useCreateInvitation(groupId);
+  const { mutate: deleteExpense, isLoading: deletingExpense } =
+    useDeleteExpense(groupId);
 
   // Debug: log de currentUserData y members
   if (currentUserData && members) {
@@ -107,6 +111,17 @@ export default function GroupPage() {
     const invitationLink = `${window.location.origin}/invite/${generatedToken}`;
     navigator.clipboard.writeText(invitationLink);
     alert("Link copiado al portapapeles");
+  };
+
+  const handleDeleteExpense = (expenseId) => {
+    deleteExpense(expenseId, {
+      onSuccess: () => {
+        setDeleteConfirm(null);
+      },
+      onError: (error) => {
+        console.error("Error al eliminar:", error);
+      },
+    });
   };
 
   const handleSubmit = (event) => {
@@ -439,23 +454,111 @@ export default function GroupPage() {
                   border: "1px solid #ddd",
                   borderRadius: "8px",
                   marginBottom: "0.5rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
                 }}
               >
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <span>{expense.description}</span>
+                    <strong>{formatCurrency(expense.total_amount)}</strong>
+                  </div>
+                  <div style={{ color: "#666", marginTop: "0.25rem" }}>
+                    Pagado por:{" "}
+                    {memberNamesById?.[expense.paid_by] || expense.paid_by}
+                  </div>
+                </div>
+                <button
+                  onClick={() =>
+                    setDeleteConfirm({
+                      expenseId: expense.id,
+                      description: expense.description,
+                    })
+                  }
+                  style={{
+                    marginLeft: "1rem",
+                    padding: "0.5rem",
+                    background: "#f44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "0.875rem",
+                  }}
                 >
-                  <span>{expense.description}</span>
-                  <strong>{formatCurrency(expense.total_amount)}</strong>
-                </div>
-                <div style={{ color: "#666", marginTop: "0.25rem" }}>
-                  Pagado por:{" "}
-                  {memberNamesById?.[expense.paid_by] || expense.paid_by}
-                </div>
+                  Eliminar
+                </button>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {/* Modal de confirmación de eliminación */}
+      {deleteConfirm && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "2rem",
+              borderRadius: "8px",
+              width: "400px",
+            }}
+          >
+            <h2>Confirmar eliminación</h2>
+            <p style={{ color: "#666" }}>
+              ¿Estás seguro de que deseas eliminar el gasto{" "}
+              <strong>{deleteConfirm.description}</strong>?
+            </p>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem",
+                  background: "#ccc",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteExpense(deleteConfirm.expenseId)}
+                disabled={deletingExpense}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem",
+                  background: "#f44336",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                {deletingExpense ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
