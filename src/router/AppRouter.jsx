@@ -12,12 +12,14 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* públicas */}
+        {/* PUBLICAS */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* 👇 INVITE SIEMPRE PUBLICA */}
         <Route path="/invite/:token" element={<InvitePage />} />
 
-        {/* protegida con layout */}
+        {/* PROTEGIDAS */}
         <Route
           element={
             <ProtectedRoute>

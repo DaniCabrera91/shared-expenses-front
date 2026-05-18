@@ -5,7 +5,8 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// 👉 REQUEST: añade access token
+// ---------------- REQUEST ----------------
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 
@@ -16,11 +17,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 👉 RESPONSE: refresh token automático
+// ---------------- RESPONSE ----------------
+
 api.interceptors.response.use(
   (response) => response,
+
   async (error) => {
     const originalRequest = error.config;
+
+    const token = localStorage.getItem("token");
+
+    // 🚨 si ni siquiera hay token → no intentar refresh
+    if (!token) {
+      return Promise.reject(error);
+    }
 
     // evitar loops infinitos
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -29,13 +39,13 @@ api.interceptors.response.use(
       try {
         const { data } = await api.post("/auth/refresh");
 
-        // El backend devuelve "token", no "accessToken"
         localStorage.setItem("token", data.token);
 
         return api(originalRequest);
       } catch (err) {
         localStorage.removeItem("token");
-        window.location.href = "/login";
+
+        return Promise.reject(err);
       }
     }
 

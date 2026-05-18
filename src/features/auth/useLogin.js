@@ -6,11 +6,31 @@ export const useLogin = () => {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: loginRequest,
-    onSuccess: (data) => {
-      // El backend devuelve "token", no "accessToken"
-      localStorage.setItem("token", data.token);
-      navigate("/");
+    mutationFn: async (formData) => {
+      const response = await loginRequest({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      return {
+        response,
+        fromInvite: formData.fromInvite,
+        invitationToken: formData.invitationToken,
+      };
+    },
+
+    onSuccess: ({ response, fromInvite, invitationToken }) => {
+      localStorage.setItem("token", response.token);
+
+      if (fromInvite && invitationToken) {
+        navigate(`/invite/${invitationToken}`, {
+          state: {
+            fromInvite: true,
+          },
+        });
+      } else {
+        navigate("/");
+      }
     },
   });
 };
