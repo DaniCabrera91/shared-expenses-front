@@ -7,6 +7,7 @@ import GroupPage from "../pages/GroupPage";
 import InvitePage from "../pages/InvitePage";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Layout from "../components/Layout";
+import AccountPage from "../pages/AccountPage";
 
 export default function AppRouter() {
   return (
@@ -30,6 +31,7 @@ export default function AppRouter() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/groups" element={<GroupsPage />} />
           <Route path="/groups/:groupId" element={<GroupPage />} />
+          <Route path="/account" element={<AccountPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

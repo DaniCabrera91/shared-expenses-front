@@ -7,6 +7,7 @@ export const authApi = {
 
   refresh: () => api.post("/auth/refresh"),
   logout: () => api.post("/auth/logout"),
+  changePassword: (data) => api.patch("/auth/password", data),
 };
 
 export const loginRequest = async (credentials) => {
