@@ -15,9 +15,10 @@ export const useRegister = () => {
             fromInvite: true,
             token: variables.invitationToken,
           },
+          replace: true,
         });
       } else {
-        navigate("/login");
+        navigate("/login", { replace: true });
       }
     },
   });

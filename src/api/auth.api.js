@@ -6,9 +6,7 @@ export const authApi = {
   login: (credentials) => api.post("/auth/login", credentials),
 
   refresh: () => api.post("/auth/refresh"),
-
-  logout: (refreshToken) =>
-    api.post("/auth/logout", { refresh_token: refreshToken }),
+  logout: () => api.post("/auth/logout"),
 };
 
 export const loginRequest = async (credentials) => {

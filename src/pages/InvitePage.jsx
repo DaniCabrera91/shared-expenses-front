@@ -47,7 +47,7 @@ export default function InvitePage() {
 
     joinGroup(cleanToken, {
       onSuccess: (res) => {
-        navigate(`/groups/${res.data.groupId}`);
+        navigate(`/groups/${res.data.groupId}`, { replace: true });
       },
     });
   }, [user, invitation, cleanToken, joining, cameFromAuth]);
@@ -112,7 +112,7 @@ export default function InvitePage() {
         onClick={() =>
           joinGroup(cleanToken, {
             onSuccess: (res) => {
-              navigate(`/groups/${res.data.groupId}`);
+              navigate(`/groups/${res.data.groupId}`, { replace: true });
             },
           })
         }
