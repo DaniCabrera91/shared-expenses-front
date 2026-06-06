@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { useExpensesSummary } from "../features/expenses/useExpensesSummary";
 import { useGroups } from "../features/groups/useGroups";
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { data: summary, isLoading: loadingSummary } = useExpensesSummary();
   const { data: groups, isLoading: loadingGroups } = useGroups();
 
@@ -85,6 +87,7 @@ export default function DashboardPage() {
           {summary?.groups_with_expenses?.map((group) => (
             <li
               key={group.id}
+              onClick={() => navigate(`/groups/${group.id}`)}
               style={{
                 padding: "1rem",
                 border: "1px solid #ddd",
@@ -93,6 +96,16 @@ export default function DashboardPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#f5f5f5";
+                e.currentTarget.style.borderColor = "#999";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "white";
+                e.currentTarget.style.borderColor = "#ddd";
               }}
             >
               <span>
@@ -116,11 +129,22 @@ export default function DashboardPage() {
           {groups?.map((group) => (
             <li
               key={group.id}
+              onClick={() => navigate(`/groups/${group.id}`)}
               style={{
                 padding: "1rem",
                 border: "1px solid #ddd",
                 marginBottom: "0.5rem",
                 borderRadius: "8px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#f5f5f5";
+                e.currentTarget.style.borderColor = "#999";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "white";
+                e.currentTarget.style.borderColor = "#ddd";
               }}
             >
               {group.emoji || "💰"} {group.name}
