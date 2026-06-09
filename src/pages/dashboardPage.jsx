@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useExpensesSummary } from "../features/expenses/useExpensesSummary";
 import { useGroups } from "../features/groups/useGroups";
+import { formatCurrency } from "../utils/format";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -10,13 +11,6 @@ export default function DashboardPage() {
   if (loadingSummary || loadingGroups) {
     return <div>Cargando...</div>;
   }
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  };
 
   return (
     <div>

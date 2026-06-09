@@ -1,14 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
-import { api } from "../api/client";
+import { useCurrentUser } from "../features/auth/useCurrentUser";
 
 export default function ProtectedRoute({ children }) {
-  const { data: user, isLoading } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => api.get("/users/me"),
-    retry: false,
-    staleTime: 1000 * 60 * 5,
-  });
+  const { data: user, isLoading } = useCurrentUser();
 
   // ⏳ mientras comprobamos sesión
   if (isLoading) {

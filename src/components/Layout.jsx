@@ -27,6 +27,7 @@ export default function Layout() {
         <nav style={{ display: "flex", gap: "1rem" }}>
           <Link to="/">Dashboard</Link>
           <Link to="/groups">Grupos</Link>
+          <Link to="/account">Cuenta</Link>
         </nav>
         <button onClick={handleLogout}>Cerrar sesión</button>
       </header>

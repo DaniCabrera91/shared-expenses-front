@@ -11,6 +11,8 @@ import { useCreateExpense } from "../features/expenses/useCreateExpense";
 import { useDeleteExpense } from "../features/expenses/useDeleteExpense";
 import { useUpdateExpense } from "../features/expenses/useUpdateExpense";
 import { useCreateInvitation } from "../features/invitations/useInvitations";
+import { useCurrentUser } from "../features/auth/useCurrentUser";
+import { formatCurrency } from "../utils/format";
 
 export default function GroupPage() {
   const { groupId } = useParams();
@@ -29,12 +31,7 @@ export default function GroupPage() {
   const [editError, setEditError] = useState("");
 
   // Obtener usuario actual para verificar si es admin
-  const { data: currentUserData, isLoading: loadingUser } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => api.get("/users/me"),
-    select: (res) => res.data.user,
-    retry: false,
-  });
+  const { data: currentUserData, isLoading: loadingUser } = useCurrentUser();
 
   const {
     data: group,
@@ -69,12 +66,6 @@ export default function GroupPage() {
 
   const [updatingMemberId, setUpdatingMemberId] = useState(null);
   const [memberRoleError, setMemberRoleError] = useState("");
-
-  // Debug: log de currentUserData y members
-  if (currentUserData && members) {
-    console.log("currentUserData:", currentUserData);
-    console.log("members:", members);
-  }
 
   // Verificar si el usuario actual es admin
   const isAdmin =
@@ -114,13 +105,6 @@ export default function GroupPage() {
   if (!group) {
     return <div>Grupo no encontrado.</div>;
   }
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: group.currency || "EUR",
-    }).format(amount);
-  };
 
   const memberNamesById = members?.reduce((acc, member) => {
     acc[member.id] = `${member.first_name} ${member.last_name}`;
@@ -560,7 +544,7 @@ export default function GroupPage() {
                       fontWeight: "bold",
                     }}
                   >
-                    {formatCurrency(value)}
+                    {formatCurrency(value, group.currency)}
                   </span>
                 </li>
               );
@@ -593,7 +577,9 @@ export default function GroupPage() {
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <span>{expense.description}</span>
-                    <strong>{formatCurrency(expense.total_amount)}</strong>
+                    <strong>
+                      {formatCurrency(expense.total_amount, group.currency)}
+                    </strong>
                   </div>
                   <div style={{ color: "#666", marginTop: "0.25rem" }}>
                     Pagado por:{" "}

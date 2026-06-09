@@ -1,7 +1,6 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { useCurrentUser } from "../features/auth/useCurrentUser";
 import {
   useValidateInvitation,
   useJoinGroup,
@@ -19,12 +18,7 @@ export default function InvitePage() {
   const cameFromAuth = location.state?.fromInvite;
 
   // ---------------- USER ----------------
-  const { data: user, isLoading: loadingUser } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => api.get("/users/me"),
-    select: (res) => res.data.user,
-    retry: false,
-  });
+  const { data: user, isLoading: loadingUser } = useCurrentUser();
 
   // ---------------- INVITE ----------------
   const {
