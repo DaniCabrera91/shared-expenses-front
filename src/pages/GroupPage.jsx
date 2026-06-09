@@ -11,6 +11,8 @@ import { useCreateExpense } from "../features/expenses/useCreateExpense";
 import { useDeleteExpense } from "../features/expenses/useDeleteExpense";
 import { useUpdateExpense } from "../features/expenses/useUpdateExpense";
 import { useCreateInvitation } from "../features/invitations/useInvitations";
+import { useArchiveGroup } from "../features/groups/useArchiveGroup";
+import { useLeaveGroup } from "../features/groups/useLeaveGroup";
 import { useCurrentUser } from "../features/auth/useCurrentUser";
 import { formatCurrency } from "../utils/format";
 
@@ -29,6 +31,9 @@ export default function GroupPage() {
   const [editTotalAmount, setEditTotalAmount] = useState("");
   const [editPaidBy, setEditPaidBy] = useState("");
   const [editError, setEditError] = useState("");
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [archiveMessage, setArchiveMessage] = useState("");
+  const [leaveError, setLeaveError] = useState("");
 
   // Obtener usuario actual para verificar si es admin
   const { data: currentUserData, isLoading: loadingUser } = useCurrentUser();
@@ -61,6 +66,8 @@ export default function GroupPage() {
     useDeleteExpense(groupId);
   const { mutate: updateExpense, isLoading: updatingExpense } =
     useUpdateExpense(groupId);
+  const { mutate: archiveGroup, isLoading: archivingGroup } = useArchiveGroup();
+  const { mutate: leaveGroup, isLoading: leavingGroup } = useLeaveGroup();
   const { mutate: updateMemberRole, isLoading: updatingMemberRole } =
     useUpdateMemberRole(groupId);
 
@@ -131,6 +138,40 @@ export default function GroupPage() {
     const invitationLink = `${window.location.origin}/invite/${generatedToken}`;
     navigator.clipboard.writeText(invitationLink);
     alert("Link copiado al portapapeles");
+  };
+
+  const handleArchiveGroup = () => {
+    setArchiveMessage("");
+    archiveGroup(groupId, {
+      onSuccess: () => {
+        setArchiveMessage(
+          "Grupo archivado. Puedes recuperarlo desde Mis Grupos → Grupos archivados.",
+        );
+      },
+      onError: (error) => {
+        setArchiveMessage(
+          error.response?.data?.error ||
+            error.message ||
+            "No se pudo archivar el grupo.",
+        );
+      },
+    });
+  };
+
+  const handleLeaveGroup = () => {
+    setLeaveError("");
+    leaveGroup(groupId, {
+      onSuccess: () => {
+        window.location.href = "/groups";
+      },
+      onError: (error) => {
+        setLeaveError(
+          error.response?.data?.error ||
+            error.message ||
+            "No se pudo abandonar el grupo.",
+        );
+      },
+    });
   };
 
   const handleDeleteExpense = (expenseId) => {
@@ -277,22 +318,159 @@ export default function GroupPage() {
           </h1>
           <p style={{ color: "#666" }}>Moneda: {group.currency}</p>
         </div>
-        {isAdmin && (
+        <div
+          style={{
+            display: "flex",
+            gap: "0.75rem",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleArchiveGroup}
+              disabled={archivingGroup}
+              style={{
+                padding: "0.5rem 1rem",
+                background: "#ff9800",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              {archivingGroup ? "Archivando..." : "Archivar grupo"}
+            </button>
+          )}
+
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowInvitationModal(true)}
+              style={{
+                padding: "0.5rem 1rem",
+                background: "#4caf50",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Generar invitación
+            </button>
+          )}
+
           <button
-            onClick={() => setShowInvitationModal(true)}
+            type="button"
+            onClick={() => setShowLeaveConfirm(true)}
             style={{
               padding: "0.5rem 1rem",
-              background: "#4caf50",
+              background: "#f44336",
               color: "white",
               border: "none",
               borderRadius: "4px",
               cursor: "pointer",
             }}
           >
-            Generar invitación
+            Abandonar grupo
           </button>
-        )}
+        </div>
       </div>
+
+      {archiveMessage && (
+        <div
+          style={{
+            marginBottom: "1rem",
+            padding: "1rem",
+            background: "#fff8e1",
+            color: "#795548",
+            borderRadius: "8px",
+            border: "1px solid #ffe0b2",
+          }}
+        >
+          {archiveMessage}
+        </div>
+      )}
+
+      {leaveError && (
+        <div
+          style={{
+            marginBottom: "1rem",
+            padding: "1rem",
+            background: "#ffebee",
+            color: "#b71c1c",
+            borderRadius: "8px",
+            border: "1px solid #ffcdd2",
+          }}
+        >
+          {leaveError}
+        </div>
+      )}
+
+      {showLeaveConfirm && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "2rem",
+              borderRadius: "8px",
+              width: "400px",
+            }}
+          >
+            <h2>Abandonar grupo</h2>
+            <p style={{ color: "#666", marginBottom: "1rem" }}>
+              Si abandonas el grupo, perderás acceso y tendrás que recibir una
+              nueva invitación para volver a unirte.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                type="button"
+                onClick={handleLeaveGroup}
+                disabled={leavingGroup}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem",
+                  background: "#f44336",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                {leavingGroup ? "Saliendo..." : "Sí, abandonar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLeaveConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem",
+                  background: "#ccc",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de invitación */}
       {showInvitationModal && (

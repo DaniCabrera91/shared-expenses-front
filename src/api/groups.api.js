@@ -1,7 +1,7 @@
 import { api } from "./client";
 
 export const groupsApi = {
-  getAll: () => api.get("/groups"),
+  getAll: (params = {}) => api.get("/groups", { params }),
 
   getById: (id) => api.get(`/groups/${id}`),
 
@@ -9,7 +9,11 @@ export const groupsApi = {
 
   update: (id, data) => api.put(`/groups/${id}`, data),
 
-  delete: (id) => api.delete(`/groups/${id}`),
+  archive: (id) => api.patch(`/groups/${id}/archive`),
+
+  unarchive: (id) => api.patch(`/groups/${id}/unarchive`),
+
+  leave: (id) => api.delete(`/groups/${id}/leave`),
 
   // Miembros
   getMembers: (id) => api.get(`/groups/${id}/members`),

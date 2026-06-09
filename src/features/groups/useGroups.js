@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { groupsApi } from "../../api/groups.api";
 
-export const useGroups = () => {
+export const useGroups = ({ archived = false } = {}) => {
   return useQuery({
-    queryKey: ["groups"],
-    queryFn: () => groupsApi.getAll(),
+    queryKey: ["groups", archived ? "archived" : "active"],
+    queryFn: () => groupsApi.getAll(archived ? { archived: true } : {}),
     select: (res) => res.data,
   });
 };

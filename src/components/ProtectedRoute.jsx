@@ -10,7 +10,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   // ❌ solo redirigir si realmente NO hay usuario
-  if (!user?.data?.user) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

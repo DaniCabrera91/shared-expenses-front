@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import EmojiPicker from "emoji-picker-react";
 import { useGroups } from "../features/groups/useGroups";
 import { useCreateGroup } from "../features/groups/useCreateGroup";
+import { useUnarchiveGroup } from "../features/groups/useUnarchiveGroup";
 
 export default function GroupsPage() {
   const [showForm, setShowForm] = useState(false);
@@ -10,9 +11,17 @@ export default function GroupsPage() {
   const [emoji, setEmoji] = useState("");
   const [currency, setCurrency] = useState("EUR");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [archiveError, setArchiveError] = useState("");
 
   const { data: groups, isLoading, error } = useGroups();
+  const {
+    data: archivedGroups,
+    isLoading: isLoadingArchived,
+    error: archivedError,
+  } = useGroups({ archived: true });
   const { mutate, isPending } = useCreateGroup();
+  const { mutate: unarchiveGroup, isLoading: isUnarchiving } =
+    useUnarchiveGroup();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -173,6 +182,69 @@ export default function GroupsPage() {
           ))}
         </ul>
       )}
+
+      <section style={{ marginTop: "2rem" }}>
+        <h2>Grupos archivados</h2>
+        {isLoadingArchived ? (
+          <p>Cargando grupos archivados...</p>
+        ) : archivedError ? (
+          <p>No se pudieron cargar los grupos archivados.</p>
+        ) : archivedGroups?.length === 0 ? (
+          <p>No hay grupos archivados.</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {archivedGroups?.map((group) => (
+              <li
+                key={group.id}
+                style={{
+                  padding: "1rem",
+                  border: "1px solid #ddd",
+                  marginBottom: "0.5rem",
+                  borderRadius: "8px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span>
+                  {group.emoji || "💰"} {group.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArchiveError("");
+                    unarchiveGroup(group.id, {
+                      onError: (error) => {
+                        setArchiveError(
+                          error.response?.data?.error ||
+                            error.message ||
+                            "No se pudo recuperar el grupo.",
+                        );
+                      },
+                    });
+                  }}
+                  disabled={isUnarchiving}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    background: "#1976d2",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Recuperar
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {archiveError && (
+          <div style={{ color: "#b71c1c", marginTop: "1rem" }}>
+            {archiveError}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
