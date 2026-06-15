@@ -88,6 +88,10 @@ export default function GroupPage() {
     currentUserData &&
     members?.some((m) => m.id === currentUserData.id && m.role === "admin");
 
+  const adminCount = members?.filter((m) => m.role === "admin").length || 0;
+  const soleAdminId =
+    adminCount === 1 ? members.find((m) => m.role === "admin")?.id : null;
+
   const getNotificationIcon = (type) => {
     switch (type) {
       case "expense_created":
@@ -117,6 +121,17 @@ export default function GroupPage() {
 
   const handleChangeMemberRole = (userId, role) => {
     setMemberRoleError("");
+    // Prevent demoting the last admin
+    if (
+      role === "member" &&
+      adminCount === 1 &&
+      members.some((m) => m.id === userId && m.role === "admin")
+    ) {
+      setMemberRoleError(
+        "No se puede dejar el grupo sin administradores. Asigna otro admin antes.",
+      );
+      return;
+    }
     setUpdatingMemberId(userId);
 
     updateMemberRole(
@@ -195,6 +210,18 @@ export default function GroupPage() {
   };
 
   const handleLeaveGroup = () => {
+    // Block leaving if current user is the last admin and there are other members
+    if (
+      currentUserData &&
+      adminCount === 1 &&
+      members.some((m) => m.id === currentUserData.id)
+    ) {
+      setLeaveError(
+        "Eres el último administrador. Transfiere el rol a otro miembro o elimina el grupo antes de salir.",
+      );
+      return;
+    }
+
     setLeaveError("");
     leaveGroup(groupId, {
       onSuccess: () => {
@@ -616,10 +643,18 @@ export default function GroupPage() {
                 {removeError}
               </div>
             )}
+            {memberToRemove.role === "admin" && adminCount === 1 && (
+              <div style={{ color: "#b71c1c", marginBottom: "1rem" }}>
+                No se puede eliminar al último administrador. Asigna otro admin
+                antes.
+              </div>
+            )}
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
                 type="button"
                 onClick={() => {
+                  if (memberToRemove.role === "admin" && adminCount === 1)
+                    return;
                   removeMember(memberToRemove.id, {
                     onSuccess: () => setMemberToRemove(null),
                     onError: (error) => {
@@ -631,7 +666,10 @@ export default function GroupPage() {
                     },
                   });
                 }}
-                disabled={removingMember}
+                disabled={
+                  removingMember ||
+                  (memberToRemove.role === "admin" && adminCount === 1)
+                }
                 style={{
                   flex: 1,
                   padding: "0.5rem",
@@ -797,6 +835,20 @@ export default function GroupPage() {
               >
                 <strong>
                   {member.first_name} {member.last_name}
+                  {member.id === soleAdminId && (
+                    <span
+                      style={{
+                        marginLeft: "0.5rem",
+                        background: "#ffe082",
+                        color: "#5d4037",
+                        padding: "0.1rem 0.35rem",
+                        borderRadius: "6px",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      Último admin
+                    </span>
+                  )}
                 </strong>
                 <div style={{ color: "#666" }}>{member.email}</div>
                 <div
@@ -815,7 +867,15 @@ export default function GroupPage() {
                       onChange={(event) =>
                         handleChangeMemberRole(member.id, event.target.value)
                       }
-                      disabled={updatingMemberId === member.id}
+                      disabled={
+                        updatingMemberId === member.id ||
+                        member.id === soleAdminId
+                      }
+                      title={
+                        member.id === soleAdminId
+                          ? "No se puede demotar al último administrador"
+                          : undefined
+                      }
                       style={{ padding: "0.4rem", borderRadius: "4px" }}
                     >
                       <option value="admin">admin</option>
@@ -831,13 +891,21 @@ export default function GroupPage() {
                         setRemoveError("");
                         setMemberToRemove(member);
                       }}
+                      disabled={removingMember || member.id === soleAdminId}
+                      title={
+                        member.id === soleAdminId
+                          ? "No se puede expulsar al último administrador"
+                          : undefined
+                      }
                       style={{
                         padding: "0.4rem 0.75rem",
-                        background: "#d32f2f",
-                        color: "white",
+                        background:
+                          member.id === soleAdminId ? "#f5f5f5" : "#d32f2f",
+                        color: member.id === soleAdminId ? "#999" : "white",
                         border: "none",
                         borderRadius: "4px",
-                        cursor: "pointer",
+                        cursor:
+                          member.id === soleAdminId ? "not-allowed" : "pointer",
                       }}
                     >
                       Expulsar
