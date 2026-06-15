@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
 import { useGroup } from "../features/groups/useGroup";
 import { useGroupMembers } from "../features/groups/useGroupMembers";
 import { useUpdateMemberRole } from "../features/groups/useUpdateMemberRole";
+import { useRemoveMember } from "../features/groups/useRemoveMember";
 import { useGroupExpenses } from "../features/expenses/useGroupExpenses";
 import { useGroupBalances } from "../features/expenses/useGroupBalances";
 import { useCreateExpense } from "../features/expenses/useCreateExpense";
@@ -14,6 +13,7 @@ import { useCreateInvitation } from "../features/invitations/useInvitations";
 import { useArchiveGroup } from "../features/groups/useArchiveGroup";
 import { useLeaveGroup } from "../features/groups/useLeaveGroup";
 import { useCurrentUser } from "../features/auth/useCurrentUser";
+import { useGroupNotifications } from "../features/notifications/useGroupNotifications";
 import { formatCurrency } from "../utils/format";
 
 export default function GroupPage() {
@@ -32,6 +32,8 @@ export default function GroupPage() {
   const [editPaidBy, setEditPaidBy] = useState("");
   const [editError, setEditError] = useState("");
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState(null);
+  const [removeError, setRemoveError] = useState("");
   const [archiveMessage, setArchiveMessage] = useState("");
   const [leaveError, setLeaveError] = useState("");
 
@@ -70,6 +72,13 @@ export default function GroupPage() {
   const { mutate: leaveGroup, isLoading: leavingGroup } = useLeaveGroup();
   const { mutate: updateMemberRole, isLoading: updatingMemberRole } =
     useUpdateMemberRole(groupId);
+  const { mutate: removeMember, isLoading: removingMember } =
+    useRemoveMember(groupId);
+  const {
+    data: notifications,
+    isLoading: loadingNotifications,
+    error: notificationsError,
+  } = useGroupNotifications(groupId);
 
   const [updatingMemberId, setUpdatingMemberId] = useState(null);
   const [memberRoleError, setMemberRoleError] = useState("");
@@ -78,6 +87,33 @@ export default function GroupPage() {
   const isAdmin =
     currentUserData &&
     members?.some((m) => m.id === currentUserData.id && m.role === "admin");
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case "expense_created":
+        return "💸";
+      case "expense_updated":
+        return "✏️";
+      case "member_joined":
+        return "👋";
+      case "invitation_sent":
+        return "📩";
+      case "group_archived":
+        return "🗄️";
+      case "group_unarchived":
+        return "📤";
+      case "member_removed":
+        return "🚫";
+      case "member_left":
+        return "👤";
+      case "member_promoted":
+        return "⭐";
+      case "member_demoted":
+        return "⬇️";
+      default:
+        return "ℹ️";
+    }
+  };
 
   const handleChangeMemberRole = (userId, role) => {
     setMemberRoleError("");
@@ -327,38 +363,44 @@ export default function GroupPage() {
           }}
         >
           {isAdmin && (
-            <button
-              type="button"
-              onClick={handleArchiveGroup}
-              disabled={archivingGroup}
+            <div
               style={{
-                padding: "0.5rem 1rem",
-                background: "#ff9800",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
+                display: "flex",
+                gap: "0.75rem",
+                flexWrap: "wrap",
               }}
             >
-              {archivingGroup ? "Archivando..." : "Archivar grupo"}
-            </button>
-          )}
+              <button
+                type="button"
+                onClick={handleArchiveGroup}
+                disabled={archivingGroup}
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: "#ff9800",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                {archivingGroup ? "Archivando..." : "Archivar grupo"}
+              </button>
 
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setShowInvitationModal(true)}
-              style={{
-                padding: "0.5rem 1rem",
-                background: "#4caf50",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Generar invitación
-            </button>
+              <button
+                type="button"
+                onClick={() => setShowInvitationModal(true)}
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: "#4caf50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Generar invitación
+              </button>
+            </div>
           )}
 
           <button
@@ -408,6 +450,75 @@ export default function GroupPage() {
         </div>
       )}
 
+      <section
+        style={{
+          marginBottom: "2rem",
+          padding: "1rem",
+          background: "#f5f5f5",
+          borderRadius: "8px",
+          border: "1px solid #e0e0e0",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: "1rem",
+            marginBottom: "1rem",
+          }}
+        >
+          <div>
+            <h2 style={{ margin: 0 }}>Actividad reciente</h2>
+            <p style={{ margin: "0.25rem 0 0", color: "#666" }}>
+              Últimos eventos del grupo y cambios recientes.
+            </p>
+          </div>
+          <span style={{ color: "#666", fontSize: "0.9rem" }}>
+            {notifications ? notifications.length : 0} eventos
+          </span>
+        </div>
+
+        {loadingNotifications ? (
+          <p>Cargando notificaciones...</p>
+        ) : notificationsError ? (
+          <p>No se pudieron cargar las notificaciones.</p>
+        ) : !notifications || notifications.length === 0 ? (
+          <p style={{ color: "#666" }}>
+            No hay notificaciones recientes para este grupo.
+          </p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {notifications.map((notification) => (
+              <li
+                key={notification.id}
+                style={{
+                  padding: "0.75rem",
+                  borderBottom: "1px solid #ddd",
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr",
+                  gap: "0.75rem",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ fontSize: "1.25rem" }}>
+                  {getNotificationIcon(notification.type)}
+                </span>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600 }}>
+                    {notification.message}
+                  </p>
+                  <p style={{ margin: "0.25rem 0 0", color: "#666" }}>
+                    {notification.actor_name} ·{" "}
+                    {new Date(notification.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {showLeaveConfirm && (
         <div
           style={{
@@ -456,6 +567,89 @@ export default function GroupPage() {
               <button
                 type="button"
                 onClick={() => setShowLeaveConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem",
+                  background: "#ccc",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {memberToRemove && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "2rem",
+              borderRadius: "8px",
+              width: "400px",
+            }}
+          >
+            <h2>Eliminar miembro</h2>
+            <p style={{ color: "#666", marginBottom: "1rem" }}>
+              ¿Estás seguro de que quieres eliminar a{" "}
+              {memberToRemove.first_name} {memberToRemove.last_name} del grupo?
+            </p>
+            {removeError && (
+              <div style={{ color: "#b71c1c", marginBottom: "1rem" }}>
+                {removeError}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  removeMember(memberToRemove.id, {
+                    onSuccess: () => setMemberToRemove(null),
+                    onError: (error) => {
+                      setRemoveError(
+                        error.response?.data?.error ||
+                          error.message ||
+                          "No se pudo eliminar al miembro.",
+                      );
+                    },
+                  });
+                }}
+                disabled={removingMember}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem",
+                  background: "#f44336",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                {removingMember ? "Eliminando..." : "Sí, eliminar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMemberToRemove(null);
+                  setRemoveError("");
+                }}
                 style={{
                   flex: 1,
                   padding: "0.5rem",
@@ -611,6 +805,7 @@ export default function GroupPage() {
                     display: "flex",
                     alignItems: "center",
                     gap: "0.75rem",
+                    flexWrap: "wrap",
                   }}
                 >
                   <div>Rol:</div>
@@ -628,6 +823,25 @@ export default function GroupPage() {
                     </select>
                   ) : (
                     <span>{member.role}</span>
+                  )}
+                  {isAdmin && member.id !== currentUserData?.id && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRemoveError("");
+                        setMemberToRemove(member);
+                      }}
+                      style={{
+                        padding: "0.4rem 0.75rem",
+                        background: "#d32f2f",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Expulsar
+                    </button>
                   )}
                 </div>
               </li>
