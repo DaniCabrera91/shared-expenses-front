@@ -6,6 +6,7 @@ import { useUpdateMemberRole } from "../features/groups/useUpdateMemberRole";
 import { useRemoveMember } from "../features/groups/useRemoveMember";
 import { useGroupExpenses } from "../features/expenses/useGroupExpenses";
 import { useGroupBalances } from "../features/expenses/useGroupBalances";
+import { useGroupSettlements } from "../features/expenses/useGroupSettlements";
 import { useCreateExpense } from "../features/expenses/useCreateExpense";
 import { useDeleteExpense } from "../features/expenses/useDeleteExpense";
 import { useUpdateExpense } from "../features/expenses/useUpdateExpense";
@@ -60,6 +61,11 @@ export default function GroupPage() {
     isLoading: loadingBalances,
     error: balancesError,
   } = useGroupBalances(groupId);
+  const {
+    data: settlements,
+    isLoading: loadingSettlements,
+    error: settlementsError,
+  } = useGroupSettlements(groupId);
 
   const { mutate, isLoading: creatingExpense } = useCreateExpense(groupId);
   const { mutate: createInvitation, isLoading: creatingInvitation } =
@@ -904,6 +910,60 @@ export default function GroupPage() {
             {creatingExpense ? "Creando..." : "Crear gasto"}
           </button>
         </form>
+      </section>
+
+      <section style={{ marginBottom: "2rem" }}>
+        <h2>Liquidación sugerida</h2>
+        {loadingSettlements ? (
+          <p>Cargando liquidación...</p>
+        ) : settlementsError ? (
+          <p>No se pudo calcular la liquidación.</p>
+        ) : !settlements || settlements.length === 0 ? (
+          <p style={{ color: "#666" }}>No hay transferencias necesarias.</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {settlements.map((s, idx) => (
+              <li
+                key={`${s.from_user_id}-${s.to_user_id}-${idx}`}
+                style={{
+                  padding: "0.75rem",
+                  border: "1px solid #ddd",
+                  borderRadius: "8px",
+                  marginBottom: "0.5rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <strong>
+                    {s.from_name} → {s.to_name}
+                  </strong>
+                  <div style={{ color: "#666" }}>
+                    {formatCurrency(s.amount, group.currency)}
+                  </div>
+                </div>
+                <div>
+                  <button
+                    style={{
+                      padding: "0.4rem 0.75rem",
+                      background: "#1976d2",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                    onClick={() =>
+                      alert("Marcar pagado (pendiente implementar)")
+                    }
+                  >
+                    Marcar pagado
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section style={{ marginBottom: "2rem" }}>

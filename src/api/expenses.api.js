@@ -19,4 +19,7 @@ export const expensesApi = {
 
   // Balances de un grupo
   getBalances: (groupId) => api.get(`/expenses/groups/${groupId}/balances`),
+  // Sugerencias de liquidación minimal entre miembros
+  getSettlements: (groupId) =>
+    api.get(`/expenses/groups/${groupId}/settlements`),
 };
