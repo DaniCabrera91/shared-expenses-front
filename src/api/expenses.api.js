@@ -22,4 +22,7 @@ export const expensesApi = {
   // Sugerencias de liquidación minimal entre miembros
   getSettlements: (groupId) =>
     api.get(`/expenses/groups/${groupId}/settlements`),
+  // Crear un settlement (marcar pagado)
+  createSettlement: (groupId, payload) =>
+    api.post(`/expenses/groups/${groupId}/settlements`, payload),
 };

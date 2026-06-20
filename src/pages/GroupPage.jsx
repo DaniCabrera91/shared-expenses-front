@@ -16,6 +16,7 @@ import { useLeaveGroup } from "../features/groups/useLeaveGroup";
 import { useCurrentUser } from "../features/auth/useCurrentUser";
 import { useGroupNotifications } from "../features/notifications/useGroupNotifications";
 import { formatCurrency } from "../utils/format";
+import { useCreateSettlement } from "../features/expenses/useCreateSettlement";
 
 export default function GroupPage() {
   const { groupId } = useParams();
@@ -85,6 +86,9 @@ export default function GroupPage() {
     isLoading: loadingNotifications,
     error: notificationsError,
   } = useGroupNotifications(groupId);
+
+  const { mutate: createSettlement, isLoading: creatingSettlement } =
+    useCreateSettlement(groupId);
 
   const [updatingMemberId, setUpdatingMemberId] = useState(null);
   const [memberRoleError, setMemberRoleError] = useState("");
@@ -947,17 +951,36 @@ export default function GroupPage() {
                   <button
                     style={{
                       padding: "0.4rem 0.75rem",
-                      background: "#1976d2",
+                      background: creatingSettlement ? "#90caf9" : "#1976d2",
                       color: "white",
                       border: "none",
                       borderRadius: "4px",
-                      cursor: "pointer",
+                      cursor: creatingSettlement ? "not-allowed" : "pointer",
                     }}
-                    onClick={() =>
-                      alert("Marcar pagado (pendiente implementar)")
-                    }
+                    onClick={() => {
+                      createSettlement(
+                        {
+                          from_user_id: s.from_user_id,
+                          to_user_id: s.to_user_id,
+                          amount: s.amount,
+                        },
+                        {
+                          onSuccess: () => {
+                            alert("Pago registrado");
+                          },
+                          onError: (err) => {
+                            alert(
+                              err.response?.data?.error ||
+                                err.message ||
+                                "No se pudo registrar el pago",
+                            );
+                          },
+                        },
+                      );
+                    }}
+                    disabled={creatingSettlement}
                   >
-                    Marcar pagado
+                    {creatingSettlement ? "Marcando..." : "Marcar pagado"}
                   </button>
                 </div>
               </li>
