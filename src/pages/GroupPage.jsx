@@ -878,7 +878,14 @@ export default function GroupPage() {
       </section>
 
       <section style={{ marginBottom: "2rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1rem",
+          }}
+        >
           <h2 style={{ margin: 0 }}>Crear gasto</h2>
           {!showExpenseForm && (
             <button
@@ -905,7 +912,10 @@ export default function GroupPage() {
             onCancel={() => setShowExpenseForm(false)}
           />
         ) : (
-          <p style={{ color: "#666" }}>Haz clic en "+ Nuevo gasto" para crear un gasto con opciones avanzadas.</p>
+          <p style={{ color: "#666" }}>
+            Haz clic en "+ Nuevo gasto" para crear un gasto con opciones
+            avanzadas.
+          </p>
         )}
       </section>
 

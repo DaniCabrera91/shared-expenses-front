@@ -160,7 +160,10 @@ export function ExpenseForm({ groupId, onSubmit, onCancel }) {
       <div className="form-section">
         <div className="section-header">
           <label>Tipo de reparto *</label>
-          <select value={splitType} onChange={(e) => setSplitType(e.target.value)}>
+          <select
+            value={splitType}
+            onChange={(e) => setSplitType(e.target.value)}
+          >
             <option value="equal">Reparto igual</option>
             <option value="proportional">Reparto proporcional</option>
             <option value="custom">Reparto personalizado</option>
@@ -195,7 +198,9 @@ export function ExpenseForm({ groupId, onSubmit, onCancel }) {
             <h4>Montos por persona:</h4>
             {Array.from(selectedParticipants).map((userId) => {
               const member = members.find((m) => m.user_id === userId);
-              const currentShare = customShares.find((s) => s.user_id === userId);
+              const currentShare = customShares.find(
+                (s) => s.user_id === userId,
+              );
 
               return (
                 <div key={userId} className="custom-share-input">

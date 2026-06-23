@@ -3,8 +3,10 @@
  */
 export const calculateEqualSplit = (totalAmount, participantUserIds) => {
   if (participantUserIds.length === 0) return [];
-  const amountPerPerson = Number((totalAmount / participantUserIds.length).toFixed(2));
-  const remainder = totalAmount - (amountPerPerson * participantUserIds.length);
+  const amountPerPerson = Number(
+    (totalAmount / participantUserIds.length).toFixed(2),
+  );
+  const remainder = totalAmount - amountPerPerson * participantUserIds.length;
 
   return participantUserIds.map((userId, index) => ({
     user_id: userId,
@@ -17,7 +19,10 @@ export const calculateEqualSplit = (totalAmount, participantUserIds) => {
  */
 export const calculateProportionalSplit = (totalAmount, participantData) => {
   // participantData: array of { user_id, proportion: number (0-1 or percentage) }
-  const totalProportion = participantData.reduce((sum, p) => sum + p.proportion, 0);
+  const totalProportion = participantData.reduce(
+    (sum, p) => sum + p.proportion,
+    0,
+  );
 
   if (totalProportion === 0) {
     throw new Error("Total proportion must be greater than 0");
@@ -25,7 +30,9 @@ export const calculateProportionalSplit = (totalAmount, participantData) => {
 
   return participantData.map((data) => ({
     user_id: data.user_id,
-    amount_owed: Number((totalAmount * (data.proportion / totalProportion)).toFixed(2)),
+    amount_owed: Number(
+      (totalAmount * (data.proportion / totalProportion)).toFixed(2),
+    ),
   }));
 };
 
