@@ -1,0 +1,204 @@
+.expense-form {
+  max-width: 600px;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-section label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.form-section input,
+.form-section select {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: var(--input-background);
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+}
+
+.form-section input:focus,
+.form-section select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.section-header select {
+  flex: 1;
+}
+
+.select-all-btn {
+  padding: 8px 12px;
+  background: var(--secondary-color, #e0e7ff);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.select-all-btn:hover {
+  background: var(--secondary-hover, #c7d2fe);
+}
+
+.participants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--input-background);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.participant-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.participant-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.participant-checkbox span {
+  color: var(--text-primary);
+}
+
+.custom-shares {
+  padding: 12px;
+  background: var(--input-background);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  margin-top: 12px;
+}
+
+.custom-shares h4 {
+  margin: 0 0 12px 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.custom-share-input {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.custom-share-input label {
+  min-width: 120px;
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.custom-share-input input {
+  flex: 1;
+  max-width: 150px;
+}
+
+.error-message {
+  padding: 12px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--primary-color, #3b82f6);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover, #2563eb);
+}
+
+.btn-secondary {
+  background: var(--secondary-color, #e0e7ff);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--secondary-hover, #c7d2fe);
+}
+
+@media (max-width: 640px) {
+  .expense-form {
+    padding: 16px;
+  }
+
+  .form-section input,
+  .form-section select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .custom-share-input {
+    flex-wrap: wrap;
+  }
+
+  .custom-share-input label {
+    min-width: 100%;
+  }
+
+  .custom-share-input input {
+    max-width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+}

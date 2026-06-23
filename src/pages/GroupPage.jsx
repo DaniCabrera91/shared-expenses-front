@@ -10,6 +10,7 @@ import { useGroupSettlements } from "../features/expenses/useGroupSettlements";
 import { useCreateExpense } from "../features/expenses/useCreateExpense";
 import { useDeleteExpense } from "../features/expenses/useDeleteExpense";
 import { useUpdateExpense } from "../features/expenses/useUpdateExpense";
+import { ExpenseForm } from "../features/expenses/ExpenseForm";
 import { useCreateInvitation } from "../features/invitations/useInvitations";
 import { useArchiveGroup } from "../features/groups/useArchiveGroup";
 import { useLeaveGroup } from "../features/groups/useLeaveGroup";
@@ -20,6 +21,7 @@ import { useCreateSettlement } from "../features/expenses/useCreateSettlement";
 
 export default function GroupPage() {
   const { groupId } = useParams();
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [description, setDescription] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [paidBy, setPaidBy] = useState("");
@@ -345,6 +347,21 @@ export default function GroupPage() {
         },
       },
     );
+  };
+
+  const handleExpenseFormSubmit = (payload) => {
+    mutate(payload, {
+      onSuccess: () => {
+        setShowExpenseForm(false);
+      },
+      onError: (error) => {
+        setFormError(
+          error.response?.data?.message ||
+            error.message ||
+            "No se pudo crear el gasto.",
+        );
+      },
+    });
   };
 
   return (
@@ -861,59 +878,35 @@ export default function GroupPage() {
       </section>
 
       <section style={{ marginBottom: "2rem" }}>
-        <h2>Crear gasto</h2>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem" }}>
-              Descripción
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              required
-              style={{ width: "100%", padding: "0.5rem" }}
-            />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem" }}>
-              Importe
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={totalAmount}
-              onChange={(event) => setTotalAmount(event.target.value)}
-              required
-              style={{ width: "100%", padding: "0.5rem" }}
-            />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem" }}>
-              Pagado por
-            </label>
-            <select
-              value={selectedPaidBy}
-              onChange={(event) => setPaidBy(event.target.value)}
-              style={{ width: "100%", padding: "0.5rem" }}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <h2 style={{ margin: 0 }}>Crear gasto</h2>
+          {!showExpenseForm && (
+            <button
+              type="button"
+              onClick={() => setShowExpenseForm(true)}
+              style={{
+                padding: "0.5rem 1rem",
+                background: "#2196f3",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
             >
-              {members.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.first_name} {member.last_name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {formError && (
-            <div style={{ color: "#b71c1c", marginBottom: "1rem" }}>
-              {formError}
-            </div>
+              + Nuevo gasto
+            </button>
           )}
-          <button type="submit" disabled={creatingExpense}>
-            {creatingExpense ? "Creando..." : "Crear gasto"}
-          </button>
-        </form>
+        </div>
+
+        {showExpenseForm ? (
+          <ExpenseForm
+            groupId={groupId}
+            onSubmit={handleExpenseFormSubmit}
+            onCancel={() => setShowExpenseForm(false)}
+          />
+        ) : (
+          <p style={{ color: "#666" }}>Haz clic en "+ Nuevo gasto" para crear un gasto con opciones avanzadas.</p>
+        )}
       </section>
 
       <section style={{ marginBottom: "2rem" }}>
